@@ -211,12 +211,63 @@
                 categoryFilterContainer: document.getElementById('category-filter-container'),
             };
 
-            function saveCustomization(key, value) { const c = JSON.parse(localStorage.getItem('customizations')) || {}; c[key] = value; localStorage.setItem('customizations', JSON.stringify(c)); }
-            function loadCustomizations() { const c = JSON.parse(localStorage.getItem('customizations')) || {}; const r = getComputedStyle(document.documentElement); document.querySelectorAll('input[type="color"]').forEach(p => { const v=p.dataset.variable, s=c[v]||r.getPropertyValue(v).trim(); p.value=s; document.documentElement.style.setProperty(v,s);}); const t=c.appTitle||'MyStudyTasks'; cache.appLogoTitle.textContent=t; document.getElementById('app-title-input').value=t; const i=c.appIcon||'📚'; cache.logoIcon.textContent=i; document.getElementById('app-icon-select').value=i; const a=c.addIcon||'➕'; cache.addTaskButtonIcon.textContent=a; document.getElementById('add-icon-select').value=a; cache.completionSoundSelect.value=c.completionSound||'none'; cache.notificationSoundSelect.value=c.notificationSound||'none'; if(localStorage.getItem('fontSize')) document.documentElement.style.fontSize=`${localStorage.getItem('fontSize')}px`; if(localStorage.getItem('theme')==='dark') document.body.classList.add('dark-theme'); }
+            // Funções para salvar e carregar personalizações
+            function saveCustomization(key, value) {
+                const customizations = JSON.parse(localStorage.getItem('customizations')) || {};
+                customizations[key] = value;
+                localStorage.setItem('customizations', JSON.stringify(customizations));
+            }
+
+            function loadCustomizations() {
+                const customizations = JSON.parse(localStorage.getItem('customizations')) || {};
+                const root = getComputedStyle(document.documentElement);
+                
+                // Carregar cores
+                document.querySelectorAll('input[type="color"]').forEach(picker => {
+                    const variable = picker.dataset.variable;
+                    const savedColor = customizations[variable] || root.getPropertyValue(variable).trim();
+                    picker.value = savedColor;
+                    document.documentElement.style.setProperty(variable, savedColor);
+                });
+                
+                // Carregar título do app
+                const appTitle = customizations.appTitle || 'MyStudyTasks';
+                cache.appLogoTitle.textContent = appTitle;
+                document.getElementById('app-title-input').value = appTitle;
+                
+                // Carregar ícones
+                const appIcon = customizations.appIcon || '📚';
+                cache.logoIcon.textContent = appIcon;
+                document.getElementById('app-icon-select').value = appIcon;
+                
+                const addIcon = customizations.addIcon || '➕';
+                cache.addTaskButtonIcon.textContent = addIcon;
+                document.getElementById('add-icon-select').value = addIcon;
+                
+                // Carregar sons
+                cache.completionSoundSelect.value = customizations.completionSound || 'none';
+                cache.notificationSoundSelect.value = customizations.notificationSound || 'none';
+                
+                // Carregar tamanho da fonte
+                if (localStorage.getItem('fontSize')) {
+                    document.documentElement.style.fontSize = `${localStorage.getItem('fontSize')}px`;
+                }
+                
+                // Carregar tema
+                if (localStorage.getItem('theme') === 'dark') {
+                    document.body.classList.add('dark-theme');
+                }
+            }
 
             function setupEventListeners() {
                 document.getElementById('add-task-form').addEventListener('submit', addTask);
-                cache.filterButtons.forEach(b => b.addEventListener('click', () => { const g = b.dataset.filterGroup; if(g === 'status') setStatusFilter(b.dataset.filter); if(g === 'priority') setPriorityFilter(b.dataset.filter); }));
+                cache.filterButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const group = button.dataset.filterGroup;
+                        if (group === 'status') setStatusFilter(button.dataset.filter);
+                        if (group === 'priority') setPriorityFilter(button.dataset.filter);
+                    });
+                });
                 cache.categoryFilter.addEventListener('change', () => setCategoryFilter(cache.categoryFilter.value));
                 document.getElementById('customization-toggle').addEventListener('click', () => cache.customizationPanel.classList.add('open'));
                 document.getElementById('customization-close').addEventListener('click', () => cache.customizationPanel.classList.remove('open'));
@@ -235,105 +286,379 @@
                 document.getElementById('import-json').addEventListener('click', () => document.getElementById('import-file').click());
                 document.getElementById('export-txt').addEventListener('click', exportToTxt);
                 document.getElementById('import-file').addEventListener('change', importFromJson);
-                document.querySelectorAll('input[type="color"]').forEach(p => p.addEventListener('input', () => { const v=p.dataset.variable; document.documentElement.style.setProperty(v,p.value); saveCustomization(v,p.value); }));
-                ['app-title-input', 'app-icon-select', 'add-icon-select', 'completion-sound', 'notification-sound'].forEach(id => { document.getElementById(id).addEventListener(id.includes('input')?'input':'change', (e) => { const key = id.replace(/-input|-select/,''); const value = e.target.value; if(key==='appTitle') cache.appLogoTitle.textContent = value; if(key==='appIcon') cache.logoIcon.textContent = value; if(key==='addIcon') cache.addTaskButtonIcon.textContent = value; saveCustomization(key, value); }); });
+                
+                // Event listeners para personalizações
+                document.querySelectorAll('input[type="color"]').forEach(picker => {
+                    picker.addEventListener('input', () => {
+                        const variable = picker.dataset.variable;
+                        document.documentElement.style.setProperty(variable, picker.value);
+                        saveCustomization(variable, picker.value);
+                    });
+                });
+                
+                document.getElementById('app-title-input').addEventListener('input', (e) => {
+                    const value = e.target.value;
+                    cache.appLogoTitle.textContent = value;
+                    saveCustomization('appTitle', value);
+                });
+                
+                document.getElementById('app-icon-select').addEventListener('change', (e) => {
+                    const value = e.target.value;
+                    cache.logoIcon.textContent = value;
+                    saveCustomization('appIcon', value);
+                });
+                
+                document.getElementById('add-icon-select').addEventListener('change', (e) => {
+                    const value = e.target.value;
+                    cache.addTaskButtonIcon.textContent = value;
+                    saveCustomization('addIcon', value);
+                });
+                
+                document.getElementById('completion-sound').addEventListener('change', (e) => {
+                    saveCustomization('completionSound', e.target.value);
+                });
+                
+                document.getElementById('notification-sound').addEventListener('change', (e) => {
+                    saveCustomization('notificationSound', e.target.value);
+                });
             }
 
-            function addTask(e) { e.preventDefault(); const title = document.getElementById('task-input').value.trim(); if(title) { tasks.unshift({ id: Date.now().toString(), title, description: '', completed: false, priority: 'medium', dueDate: '', category: '', createdAt: new Date().toISOString() }); saveAndRender(); document.getElementById('task-input').value = ''; playSound('notification'); } }
-            function toggleTaskCompletion(id) { const task = tasks.find(t => t.id === id); if(task) { task.completed = !task.completed; if(task.completed) playSound('completion'); saveAndRender(); } }
-            function editTask(id) { const task = tasks.find(t => t.id === id); if(task) { editingTaskId = id; document.getElementById('edit-title').value = task.title; document.getElementById('edit-description').value = task.description || ''; document.getElementById('edit-priority').value = task.priority; document.getElementById('edit-due-date').value = task.dueDate || ''; document.getElementById('edit-category').value = task.category || ''; cache.taskModal.classList.add('open'); } }
-            function deleteTask(id) { if(confirm('Excluir esta tarefa?')) { tasks = tasks.filter(t => t.id !== id); playSound('notification'); saveAndRender(); } }
-            function saveTaskDetails(e) { e.preventDefault(); const task = tasks.find(t => t.id === editingTaskId); if(task) { task.title = document.getElementById('edit-title').value.trim(); task.description = document.getElementById('edit-description').value.trim(); task.priority = document.getElementById('edit-priority').value; task.dueDate = document.getElementById('edit-due-date').value; task.category = document.getElementById('edit-category').value.trim(); closeModal(); playSound('notification'); saveAndRender(); } }
+            function addTask(e) {
+                e.preventDefault();
+                const title = document.getElementById('task-input').value.trim();
+                if (title) {
+                    tasks.unshift({
+                        id: Date.now().toString(),
+                        title,
+                        description: '',
+                        completed: false,
+                        priority: 'medium',
+                        dueDate: '',
+                        category: '',
+                        createdAt: new Date().toISOString()
+                    });
+                    saveAndRender();
+                    document.getElementById('task-input').value = '';
+                    playSound('notification');
+                }
+            }
+
+            function toggleTaskCompletion(id) {
+                const task = tasks.find(t => t.id === id);
+                if (task) {
+                    task.completed = !task.completed;
+                    if (task.completed) playSound('completion');
+                    saveAndRender();
+                }
+            }
+
+            function editTask(id) {
+                const task = tasks.find(t => t.id === id);
+                if (task) {
+                    editingTaskId = id;
+                    document.getElementById('edit-title').value = task.title;
+                    document.getElementById('edit-description').value = task.description || '';
+                    document.getElementById('edit-priority').value = task.priority;
+                    document.getElementById('edit-due-date').value = task.dueDate || '';
+                    document.getElementById('edit-category').value = task.category || '';
+                    cache.taskModal.classList.add('open');
+                }
+            }
+
+            function deleteTask(id) {
+                if (confirm('Excluir esta tarefa?')) {
+                    tasks = tasks.filter(t => t.id !== id);
+                    playSound('notification');
+                    saveAndRender();
+                }
+            }
+
+            function saveTaskDetails(e) {
+                e.preventDefault();
+                const task = tasks.find(t => t.id === editingTaskId);
+                if (task) {
+                    task.title = document.getElementById('edit-title').value.trim();
+                    task.description = document.getElementById('edit-description').value.trim();
+                    task.priority = document.getElementById('edit-priority').value;
+                    task.dueDate = document.getElementById('edit-due-date').value;
+                    task.category = document.getElementById('edit-category').value.trim();
+                    closeModal();
+                    playSound('notification');
+                    saveAndRender();
+                }
+            }
             
-            function setStatusFilter(f) { currentStatusFilter = f; document.querySelectorAll('[data-filter-group="status"]').forEach(b => b.classList.toggle('active', b.dataset.filter === f)); renderTasks(); }
-            function setPriorityFilter(f) { currentPriorityFilter = f; document.querySelectorAll('[data-filter-group="priority"]').forEach(b => b.classList.toggle('active', b.dataset.filter === f)); renderTasks(); }
-            function setCategoryFilter(f) { currentCategoryFilter = f; renderTasks(); }
+            function setStatusFilter(filter) {
+                currentStatusFilter = filter;
+                document.querySelectorAll('[data-filter-group="status"]').forEach(button => {
+                    button.classList.toggle('active', button.dataset.filter === filter);
+                });
+                renderTasks();
+            }
+
+            function setPriorityFilter(filter) {
+                currentPriorityFilter = filter;
+                document.querySelectorAll('[data-filter-group="priority"]').forEach(button => {
+                    button.classList.toggle('active', button.dataset.filter === filter);
+                });
+                renderTasks();
+            }
+
+            function setCategoryFilter(filter) {
+                currentCategoryFilter = filter;
+                renderTasks();
+            }
 
             function getFilteredTasks() {
-                return tasks.filter(t => 
-                    (currentStatusFilter === 'all' || (currentStatusFilter === 'completed' ? t.completed : !t.completed)) &&
-                    (currentPriorityFilter === 'all' || t.priority === currentPriorityFilter) &&
-                    (currentCategoryFilter === 'all' || t.category === currentCategoryFilter)
+                return tasks.filter(task => 
+                    (currentStatusFilter === 'all' || (currentStatusFilter === 'completed' ? task.completed : !task.completed)) &&
+                    (currentPriorityFilter === 'all' || task.priority === currentPriorityFilter) &&
+                    (currentCategoryFilter === 'all' || task.category === currentCategoryFilter)
                 );
             }
 
             function updateCategoryFilter() {
-                const categories = [...new Set(tasks.map(t => t.category).filter(Boolean))];
+                const categories = [...new Set(tasks.map(task => task.category).filter(Boolean))];
                 if (categories.length > 0) {
                     cache.categoryFilterContainer.style.display = 'flex';
-                    const currentVal = cache.categoryFilter.value;
+                    const currentValue = cache.categoryFilter.value;
                     cache.categoryFilter.innerHTML = '<option value="all">Todas</option>';
                     categories.sort().forEach(cat => cache.categoryFilter.add(new Option(cat, cat)));
-                    cache.categoryFilter.value = categories.includes(currentVal) ? currentVal : 'all';
-                } else { cache.categoryFilterContainer.style.display = 'none'; }
+                    cache.categoryFilter.value = categories.includes(currentValue) ? currentValue : 'all';
+                } else {
+                    cache.categoryFilterContainer.style.display = 'none';
+                }
             }
 
             function renderTasks() {
                 updateCategoryFilter();
                 const filteredTasks = getFilteredTasks();
                 cache.taskList.innerHTML = '';
-                if (filteredTasks.length === 0) { cache.emptyState.style.display = 'block'; }
-                else {
+                
+                if (filteredTasks.length === 0) {
+                    cache.emptyState.style.display = 'block';
+                } else {
                     cache.emptyState.style.display = 'none';
-                    const today = new Date(); today.setHours(0,0,0,0);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
                     filteredTasks.forEach(task => {
                         const item = document.createElement('li');
                         item.className = 'task-item' + (task.completed ? ' completed' : '');
-                        if (!task.completed && task.dueDate) { const dueDate = new Date(task.dueDate + 'T00:00:00'); if (dueDate < today) item.classList.add('overdue'); else if (dueDate.getTime() === today.getTime()) item.classList.add('due-today'); }
+                        
+                        // Verificar se a tarefa está atrasada ou vence hoje
+                        if (!task.completed && task.dueDate) {
+                            const dueDate = new Date(task.dueDate + 'T00:00:00');
+                            if (dueDate < today) {
+                                item.classList.add('overdue');
+                            } else if (dueDate.getTime() === today.getTime()) {
+                                item.classList.add('due-today');
+                            }
+                        }
+                        
                         const priorityText = { high: 'Alta', medium: 'Média', low: 'Baixa' }[task.priority];
                         const dueDateFormatted = task.dueDate ? new Date(task.dueDate + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-                        item.innerHTML = `<input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}><div class="task-content"><div class="task-title">${escapeHtml(task.title)}</div>${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}<div class="task-details"><span class="task-priority priority-${task.priority}">${priorityText}</span>${task.category ? `<span class="task-category">${escapeHtml(task.category)}</span>` : ''}${dueDateFormatted ? `<div class="task-date">${dueDateFormatted} <span class="date-warning-icon">⚠️</span></div>` : ''}</div></div><div class="task-actions"><button class="btn-secondary edit-btn">✏️</button><button class="btn-danger delete-btn">🗑️</button></div>`;
+                        
+                        item.innerHTML = `
+                            <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
+                            <div class="task-content">
+                                <div class="task-title">${escapeHtml(task.title)}</div>
+                                ${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
+                                <div class="task-details">
+                                    <span class="task-priority priority-${task.priority}">${priorityText}</span>
+                                    ${task.category ? `<span class="task-category">${escapeHtml(task.category)}</span>` : ''}
+                                    ${dueDateFormatted ? `<div class="task-date">${dueDateFormatted} <span class="date-warning-icon">⚠️</span></div>` : ''}
+                                </div>
+                            </div>
+                            <div class="task-actions">
+                                <button class="btn-secondary edit-btn">✏️</button>
+                                <button class="btn-danger delete-btn">🗑️</button>
+                            </div>
+                        `;
+                        
                         item.querySelector('.task-checkbox').addEventListener('change', () => toggleTaskCompletion(task.id));
                         item.querySelector('.edit-btn').addEventListener('click', () => editTask(task.id));
                         item.querySelector('.delete-btn').addEventListener('click', () => deleteTask(task.id));
+                        
                         cache.taskList.appendChild(item);
                     });
                 }
             }
             
-            function saveAndRender() { localStorage.setItem('tasks', JSON.stringify(tasks)); renderTasks(); }
-            function clearCompletedTasks() { if(confirm('Limpar tarefas concluídas?')) { tasks = tasks.filter(t => !t.completed); saveAndRender(); } }
-            function clearAllTasks() { if(confirm('Limpar TODAS as tarefas?')) { tasks = []; saveAndRender(); } }
+            function saveAndRender() {
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                renderTasks();
+            }
+
+            function clearCompletedTasks() {
+                if (confirm('Limpar tarefas concluídas?')) {
+                    tasks = tasks.filter(task => !task.completed);
+                    saveAndRender();
+                }
+            }
+
+            function clearAllTasks() {
+                if (confirm('Limpar TODAS as tarefas?')) {
+                    tasks = [];
+                    saveAndRender();
+                }
+            }
 
             function playSound(type) {
-                const soundName = cache[type + 'SoundSelect'].value; if (soundName === 'none') return;
+                const soundName = cache[type + 'SoundSelect'].value;
+                if (soundName === 'none') return;
+                
                 try {
-                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)(), osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
-                    osc.connect(gain); gain.connect(audioCtx.destination); gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                    const profiles = {
-                        completion: { success: {t:'sine', n:[[523,0],[659,0.1],[783,0.2]]}, bell: {t:'sine', n:[[987,0],[783,0.2]]}, chime: {t:'triangle', n:[[1046,0],[1318,0.25]]} },
-                        notification: { alert: {t:'triangle', n:[[660,0],[880,0.1]]}, beep: {t:'square', n:[[440,0]]}, ding: {t:'sine', n:[[1200,0]]} }
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    
+                    const soundProfiles = {
+                        completion: {
+                            success: { type: 'sine', notes: [[523, 0], [659, 0.1], [783, 0.2]] },
+                            bell: { type: 'sine', notes: [[987, 0], [783, 0.2]] },
+                            chime: { type: 'triangle', notes: [[1046, 0], [1318, 0.25]] }
+                        },
+                        notification: {
+                            alert: { type: 'triangle', notes: [[660, 0], [880, 0.1]] },
+                            beep: { type: 'square', notes: [[440, 0]] },
+                            ding: { type: 'sine', notes: [[1200, 0]] }
+                        }
                     };
-                    const p = profiles[type][soundName]; if (p) { osc.type = p.t; p.n.forEach(([f,t]) => osc.frequency.setValueAtTime(f, audioCtx.currentTime + t)); }
-                    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
-                    osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.5);
-                } catch (e) { console.warn("Web Audio API não suportada."); }
+                    
+                    const profile = soundProfiles[type][soundName];
+                    if (profile) {
+                        oscillator.type = profile.type;
+                        profile.notes.forEach(([frequency, time]) => {
+                            oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime + time);
+                        });
+                    }
+                    
+                    gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
+                    
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.5);
+                } catch (e) {
+                    console.warn("Web Audio API não suportada.");
+                }
             }
 
             function readContentAloud() {
-                if ('speechSynthesis' in window && speechSynthesis.speaking) return speechSynthesis.cancel();
-                const pending = tasks.filter(t => !t.completed).length;
-                const text = `Você tem tarefas pendentes. Quantidade igual a ${pending}.`;
-                if ('speechSynthesis' in window) { const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'pt-BR'; speechSynthesis.speak(utterance); }
-                else { alert('Leitura em voz alta não é suportada neste navegador.'); }
+                if ('speechSynthesis' in window && speechSynthesis.speaking) {
+                    return speechSynthesis.cancel();
+                }
+                
+                const pendingTasks = tasks.filter(task => !task.completed).length;
+                const text = `Você tem tarefas pendentes. Quantidade igual a ${pendingTasks}.`;
+                
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'pt-BR';
+                    speechSynthesis.speak(utterance);
+                } else {
+                    alert('Leitura em voz alta não é suportada neste navegador.');
+                }
             }
 
-            function exportToJson() { const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(JSON.stringify(tasks, null, 2)); const link = document.createElement('a'); link.setAttribute('href', dataUri); link.setAttribute('download', 'mystudytasks.json'); link.click(); }
+            function exportToJson() {
+                const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(tasks, null, 2));
+                const link = document.createElement('a');
+                link.setAttribute('href', dataUri);
+                link.setAttribute('download', 'mystudytasks.json');
+                link.click();
+            }
+
             function exportToTxt() {
                 const tasksToExport = getFilteredTasks();
                 let content = `Minhas Tarefas (Filtro Aplicado) - ${new Date().toLocaleDateString('pt-BR')}\n\n`;
-                if (tasksToExport.length === 0) { content += "Nenhuma tarefa encontrada com os filtros atuais."; }
-                else { tasksToExport.forEach(t => { content += `${t.completed ? '[X]' : '[ ]'} ${t.title} (Prioridade: ${t.priority})\n`; if(t.dueDate) content+=`  - Vence em: ${new Date(t.dueDate + 'T00:00:00').toLocaleDateString('pt-BR')}\n`; if(t.category) content+=`  - Categoria: ${t.category}\n`; content += '\n'; }); }
-                const blob = new Blob([content], {type:'text/plain;charset=utf-8'}); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'mystudytasks_filtrado.txt'; link.click(); URL.revokeObjectURL(url);
+                
+                if (tasksToExport.length === 0) {
+                    content += "Nenhuma tarefa encontrada com os filtros atuais.";
+                } else {
+                    tasksToExport.forEach(task => {
+                        content += `${task.completed ? '[X]' : '[ ]'} ${task.title} (Prioridade: ${task.priority})\n`;
+                        if (task.dueDate) content += `  - Vence em: ${new Date(task.dueDate + 'T00:00:00').toLocaleDateString('pt-BR')}\n`;
+                        if (task.category) content += `  - Categoria: ${task.category}\n`;
+                        content += '\n';
+                    });
+                }
+                
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'mystudytasks_filtrado.txt';
+                link.click();
+                URL.revokeObjectURL(url);
             }
-            function importFromJson(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = e => { try { const imported = JSON.parse(e.target.result); if (Array.isArray(imported)) { if (confirm(`Importar ${imported.length} tarefas? (Cancelar para mesclar)`)) tasks = imported; else { const existingIds = new Set(tasks.map(t=>t.id)); tasks.push(...imported.filter(t => !existingIds.has(t.id))); } saveAndRender(); } else alert('Arquivo JSON inválido.'); } catch(err) { alert('Erro ao ler o arquivo.'); } }; reader.readAsText(file); e.target.value = ''; }
+
+            function importFromJson(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = e => {
+                    try {
+                        const importedTasks = JSON.parse(e.target.result);
+                        if (Array.isArray(importedTasks)) {
+                            if (confirm(`Importar ${importedTasks.length} tarefas? (Cancelar para mesclar)`)) {
+                                tasks = importedTasks;
+                            } else {
+                                const existingIds = new Set(tasks.map(task => task.id));
+                                tasks.push(...importedTasks.filter(task => !existingIds.has(task.id)));
+                            }
+                            saveAndRender();
+                        } else {
+                            alert('Arquivo JSON inválido.');
+                        }
+                    } catch (err) {
+                        alert('Erro ao ler o arquivo.');
+                    }
+                };
+                reader.readAsText(file);
+                e.target.value = '';
+            }
             
-            function testSounds() { playSound('completion'); setTimeout(() => playSound('notification'), 600); }
-            function changeFontSize(dir) { const root = document.documentElement; const style = window.getComputedStyle(root); let size = parseFloat(style.fontSize); if(dir===0) size=16; else size+=dir*2; size=Math.max(12, Math.min(24, size)); root.style.fontSize = `${size}px`; localStorage.setItem('fontSize', size); }
-            function toggleTheme() { document.body.classList.toggle('dark-theme'); localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light'); }
-            function closeModal() { cache.taskModal.classList.remove('open'); editingTaskId = null; }
-            function escapeHtml(str) { return String(str).replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' })[m]); }
+            function testSounds() {
+                playSound('completion');
+                setTimeout(() => playSound('notification'), 600);
+            }
+
+            function changeFontSize(direction) {
+                const root = document.documentElement;
+                const style = window.getComputedStyle(root);
+                let size = parseFloat(style.fontSize);
+                
+                if (direction === 0) {
+                    size = 16; // Reset para o tamanho padrão
+                } else {
+                    size += direction * 2;
+                }
+                
+                size = Math.max(12, Math.min(24, size));
+                root.style.fontSize = `${size}px`;
+                localStorage.setItem('fontSize', size);
+            }
+
+            function toggleTheme() {
+                document.body.classList.toggle('dark-theme');
+                localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+            }
+
+            function closeModal() {
+                cache.taskModal.classList.remove('open');
+                editingTaskId = null;
+            }
+
+            function escapeHtml(str) {
+                return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
+            }
             
+            // Inicializar a aplicação
             loadCustomizations();
             saveAndRender();
             setupEventListeners();
