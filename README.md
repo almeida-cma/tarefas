@@ -7,8 +7,6 @@ Um organizador de tarefas de estudo completo, interativo e 100% personalizável,
 
 > ### Acesse a versão ao vivo: [https://almeida-cma.github.io/tarefas/](https://almeida-cma.github.io/tarefas/)
 
- 
-*(Sugestão: Substitua o link acima por um screenshot real do seu projeto para um visual mais profissional)*
 
 ---
 
