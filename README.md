@@ -63,5 +63,5 @@ O repositório é intencionalmente simples para focar no aprendizado do código-
 └── Manual.pdf     # O manual completo do usuário em formato PDF.
 
 📝 Formulário de feedback da aula:
-<https://forms.gle/RVDBp5cay9EiDbKP9>
+[Formulário](https://forms.gle/RVDBp5cay9EiDbKP9)
 
