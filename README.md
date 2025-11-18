@@ -61,3 +61,6 @@ O repositório é intencionalmente simples para focar no aprendizado do código-
 /
 ├── index.html     # O arquivo principal do aplicativo. Contém todo o HTML, CSS e JavaScript.
 └── Manual.pdf     # O manual completo do usuário em formato PDF.
+
+📝 Formulário de feedback da aula:
+https://forms.gle/RVDBp5cay9EiDbKP9
